@@ -1,34 +1,39 @@
-from flask import Flask, request, jsonify
-import pickle
 import numpy as np
+import pickle
+from flask import Flask, request, render_template
 
+# Load ML model
 model = pickle.load(open('model_saved', 'rb'))
+
+# Create application
 app = Flask(__name__)
 
+# Bind home function to URL
 @app.route('/')
 def home():
-    return "Hello World"
+    return render_template('Heart Disease Classifier.html')
 
-@app.route('/predict', methods = ['POST'])
+# Bind predict function to URL
+@app.route('/predict', methods =['POST'])
 def predict():
-    age = request.form.get('age')
-    sex = request.form.get('sex')
-    cp = request.form.get('cp')
-    trestbps = request.form.get('trestbps')
-    chol = request.form.get('chol')
-    fbs = request.form.get('fbs')
-    restecg = request.form.get('restecg')
-    thalach = request.form.get('thalach')
-    exang = request.form.get('exang')
-    oldpeak = request.form.get('oldpeak')
-    slope = request.form.get('slope')
-    ca = request.form.get('ca')
-    thal = request.form.get('thal')
 
-    input_query = np.array([age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]).reshape(1, -1)
-    result = model.predict(input_query)[0]
+    # Put all form entries values in a list 
+    features = [float(i) for i in request.form.values()]
+    # Convert features to array
+    array_features = [np.array(features)]
+    # Predict features
+    prediction = model.predict(array_features)
 
-    return jsonify({'Result' : result})
+    output = prediction
+
+    # Check the output values and retrive the result with html tag based on the value
+    if output == 1:
+        return render_template('Heart Disease Classifier.html', 
+                               result = 'The patient is not likely to have heart disease!')
+    else:
+        return render_template('Heart Disease Classifier.html', 
+                               result = 'The patient is likely to have heart disease!')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+#Run the application
+    app.run()
